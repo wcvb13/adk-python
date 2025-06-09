@@ -712,15 +712,15 @@ class LiteLlm(BaseLlm):
                 messages[i] = new_msg
 
         # 处理 tools 部分 - 只在最后一个 function 中添加 cache_control
-        # if 'tools' in completion_args and completion_args['tools']:
-        #     tools = completion_args['tools']
-        #     if len(tools) > 0:
-        #         # 只在最后一个 function 中添加 cache_control
-        #         last_tool = tools[-1]
-        #         if last_tool.get('type') == 'function' and 'function' in last_tool:
-        #             last_tool['function']['cache_control'] = {
-        #                 "type": "default"
-        #             }
+        if 'tools' in completion_args and completion_args['tools']:
+            tools = completion_args['tools']
+            if len(tools) > 0:
+                # 只在最后一个 function 中添加 cache_control
+                last_tool = tools[-1]
+                if last_tool.get('type') == 'function' and 'function' in last_tool:
+                    last_tool['function']['cache_control'] = {
+                        "type": "default"
+                    }
         
         return completion_args
 
