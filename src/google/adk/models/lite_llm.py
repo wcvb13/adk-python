@@ -686,7 +686,7 @@ class LiteLlm(BaseLlm):
                 if msg.get('role') == 'system' or msg.get('role') == 'developer':
                     # 系统消息转换为新格式并添加cachePoint
                     new_msg = {
-                        "role": 'user',
+                        "role": msg.get('role'),
                         "content": [
                             {
                                 "type": "text",
