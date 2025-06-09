@@ -671,21 +671,17 @@ class LiteLlm(BaseLlm):
     completion_args.update(self._additional_args)
 
     def reorder_and_add_cache_points(completion_args):
-        # 创建一个新的结构来保存重新排序后的数据
-        reordered_json = completion_args.copy()
-        
-        # 处理 messages 部分 - 将 system 消息移到最前面并转换格式
+        # 直接修改completion_args，不创建副本，保持消息原有顺序
+
+        # 处理 messages 部分 - 保持原有顺序，只转换格式和添加cache_control
         if 'messages' in completion_args:
             messages = completion_args['messages']
-            
-            # 分离system消息和其他消息
-            system_messages = []
-            other_messages = []
-            
-            for msg in messages:
+
+            # 原位修改每个消息，保持原有顺序
+            for i, msg in enumerate(messages):
                 if msg.get('role') == 'system' or msg.get('role') == 'developer':
                     # 系统消息转换为新格式并添加cachePoint
-                    new_msg = {
+                    messages[i] = {
                         "role": msg.get('role'),
                         "content": [
                             {
@@ -697,11 +693,9 @@ class LiteLlm(BaseLlm):
                             }
                         ]
                     }
-                    # 系统消息放在前面
-                    system_messages.append(new_msg)
                 else:
                     # 其他消息转换为新格式但不添加cachePoint
-                    new_msg = {
+                    messages[i] = {
                         "role": msg.get('role'),
                         "content": [
                             {
@@ -710,11 +704,7 @@ class LiteLlm(BaseLlm):
                             }
                         ]
                     }
-                    other_messages.append(new_msg)
-            
-            # 重新组合消息，system消息在前
-            reordered_json['messages'] = system_messages + other_messages
-        
+
         # 处理 tools 部分 - 只在最后一个 function 中添加 cache_control
         # if 'tools' in completion_args and completion_args['tools']:
         #     tools = completion_args['tools']
@@ -726,7 +716,8 @@ class LiteLlm(BaseLlm):
         #                 "type": "default"
         #             }
         
-        return reordered_json
+        return completion_args
+
 
     completion_args = reorder_and_add_cache_points(completion_args)
 
