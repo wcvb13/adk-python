@@ -679,11 +679,14 @@ class LiteLlm(BaseLlm):
 
             # 原位修改每个消息，保持原有顺序
             for i, msg in enumerate(messages):
-                if msg.get('role') == 'system' or msg.get('role') == 'developer':
-                    # 系统消息转换为新格式并添加cachePoint
-                    messages[i] = {
-                        "role": msg.get('role'),
-                        "content": [
+                # 保留原有的所有字段（如 tool_calls）
+                new_msg = {"role": msg.get('role')}
+                
+                # 处理 content 字段
+                if msg.get('content'):
+                    if msg.get('role') == 'system' or msg.get('role') == 'developer':
+                        # 系统消息转换为新格式并添加cachePoint
+                        new_msg["content"] = [
                             {
                                 "type": "text",
                                 "text": msg.get('content'),
@@ -692,18 +695,21 @@ class LiteLlm(BaseLlm):
                                 }
                             }
                         ]
-                    }
-                else:
-                    # 其他消息转换为新格式但不添加cachePoint
-                    messages[i] = {
-                        "role": msg.get('role'),
-                        "content": [
+                    else:
+                        # 其他消息转换为新格式但不添加cachePoint
+                        new_msg["content"] = [
                             {
                                 "type": "text",
                                 "text": msg.get('content')
                             }
                         ]
-                    }
+                
+                # 保留原有的其他字段，如 tool_calls
+                for key, value in msg.items():
+                    if key not in ['role', 'content']:
+                        new_msg[key] = value
+                
+                messages[i] = new_msg
 
         # 处理 tools 部分 - 只在最后一个 function 中添加 cache_control
         # if 'tools' in completion_args and completion_args['tools']:
@@ -719,7 +725,7 @@ class LiteLlm(BaseLlm):
         return completion_args
 
 
-    # completion_args = reorder_and_add_cache_points(completion_args)
+    completion_args = reorder_and_add_cache_points(completion_args)
 
     print(f"Complete Args: {json.dumps(completion_args, indent=2)}")
 
