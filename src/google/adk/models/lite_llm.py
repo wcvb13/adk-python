@@ -664,8 +664,8 @@ class LiteLlm(BaseLlm):
 
     completion_args = {
         "model": self.model,
-        "tools": tools,
         "messages": messages,
+        "tools": tools,
         "response_format": response_format,
     }
     completion_args.update(self._additional_args)
