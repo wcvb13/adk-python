@@ -670,6 +670,68 @@ class LiteLlm(BaseLlm):
     }
     completion_args.update(self._additional_args)
 
+    def reorder_and_add_cache_points(completion_args):
+        # 创建一个新的结构来保存重新排序后的数据
+        reordered_json = completion_args.copy()
+        
+        # 处理 messages 部分 - 将 system 消息移到最前面并转换格式
+        if 'messages' in completion_args:
+            messages = completion_args['messages']
+            
+            # 分离system消息和其他消息
+            system_messages = []
+            other_messages = []
+            
+            for msg in messages:
+                if msg.get('role') == 'system' or msg.get('role') == 'developer':
+                    # 系统消息转换为新格式并添加cachePoint
+                    new_msg = {
+                        "role": 'user',
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": msg.get('content'),
+                                "cache_control": {
+                                    "type": "default"
+                                }
+                            }
+                        ]
+                    }
+                    # 系统消息放在前面
+                    system_messages.append(new_msg)
+                else:
+                    # 其他消息转换为新格式但不添加cachePoint
+                    new_msg = {
+                        "role": msg.get('role'),
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": msg.get('content')
+                            }
+                        ]
+                    }
+                    other_messages.append(new_msg)
+            
+            # 重新组合消息，system消息在前
+            reordered_json['messages'] = system_messages + other_messages
+        
+        # 处理 tools 部分 - 只在最后一个 function 中添加 cache_control
+        if 'tools' in completion_args and completion_args['tools']:
+            tools = completion_args['tools']
+            if len(tools) > 0:
+                # 只在最后一个 function 中添加 cache_control
+                last_tool = tools[-1]
+                if last_tool.get('type') == 'function' and 'function' in last_tool:
+                    last_tool['function']['cache_control'] = {
+                        "type": "default"
+                    }
+        
+        return reordered_json
+
+    completion_args = reorder_and_add_cache_points(completion_args)
+
+    print(f"Complete Args: {json.dumps(completion_args, indent=2)}")
+
     if stream:
       text = ""
       # Track function calls by index
