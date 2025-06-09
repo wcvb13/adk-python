@@ -719,7 +719,7 @@ class LiteLlm(BaseLlm):
         return completion_args
 
 
-    completion_args = reorder_and_add_cache_points(completion_args)
+    # completion_args = reorder_and_add_cache_points(completion_args)
 
     print(f"Complete Args: {json.dumps(completion_args, indent=2)}")
 
